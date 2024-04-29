@@ -14,12 +14,14 @@ A *very* minimalist markdown editor
   * Bold
 * Copies the entire buffer to the clipboard as formatted HTML, good for pasting into other apps (CTRL-Shift-C)
 
-## Installation
+## Preparation
 
+In this folder:
 
+    pip install -r requirements.txt
 
 ## Usage
 
-Run from this folder:
+In this folder:
 
     python -m ursus
