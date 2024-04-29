@@ -13,3 +13,13 @@ A *very* minimalist markdown editor
   * Italics
   * Bold
 * Copies the entire buffer to the clipboard as formatted HTML, good for pasting into other apps (CTRL-Shift-C)
+
+## Installation
+
+
+
+## Usage
+
+Run from this folder:
+
+    python -m ursus
