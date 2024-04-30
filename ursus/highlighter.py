@@ -13,6 +13,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
         self.rules.append((QRegularExpression(r"\*\*([^*]+)\*\*"), self.bold_format))
         self.rules.append((QRegularExpression(r"(?<!\*)\*([^*]+)\*(?!\*)"), self.italic_format))
+        self.rules.append((QRegularExpression(r"(?<!\_)\_([^_]+)\_(?!\_)"), self.italic_format))
         self.rules.append((QRegularExpression(r"^# .+"), self.heading_format))
 
     def create_text_format(self, size, style):
