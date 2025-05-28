@@ -9,6 +9,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         self.rules = []
         self.formatting_ranges = []
         self.cursor_position = 0
+        self.cursor_block_number = 0
 
         self.bold_format = self.create_text_format(parent.text_size, QFont.Bold)
         self.italic_format = self.create_text_format(parent.text_size, QFont.StyleItalic)
@@ -28,11 +29,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         # Also set font size percentage to make it as small as possible
         self.hidden_format.setFontPointSize(0.1)
 
-        self.rules.append((QRegularExpression(r"^##### .+"), self.heading5_format))
-        self.rules.append((QRegularExpression(r"^#### .+"), self.heading4_format))
-        self.rules.append((QRegularExpression(r"^### .+"), self.heading3_format))
-        self.rules.append((QRegularExpression(r"^## .+"), self.heading2_format))
-        self.rules.append((QRegularExpression(r"^# .+"), self.heading1_format))
+        # Heading patterns are now handled separately in highlightBlock
 
     def create_text_format(self, size, style):
         font = QFont("Montserrat", size)
@@ -46,21 +43,49 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
     def set_cursor_position(self, position):
         self.cursor_position = position
+        # Calculate which block (line) the cursor is on
+        cursor = self.parent_widget.textCursor()
+        cursor.setPosition(position)
+        self.cursor_block_number = cursor.blockNumber()
         self.rehighlight()
 
     def highlightBlock(self, text):
         block_start = self.currentBlock().position()
+        current_block_number = self.currentBlock().blockNumber()
         
         # Clear previous formatting ranges for this block
         self.formatting_ranges = [r for r in self.formatting_ranges if r['block_start'] != block_start]
         
-        # Handle headings first
-        for pattern, fmt in self.rules:
-            expression = QRegularExpression(pattern)
-            match_iterator = expression.globalMatch(text)
-            while match_iterator.hasNext():
-                match = match_iterator.next()
-                self.setFormat(match.capturedStart(), match.capturedLength(), fmt)
+        # Handle headings with cursor-based visibility
+        heading_patterns = [
+            (r"^(#####) (.+)", self.heading5_format, 5),
+            (r"^(####) (.+)", self.heading4_format, 4),
+            (r"^(###) (.+)", self.heading3_format, 3),
+            (r"^(##) (.+)", self.heading2_format, 2),
+            (r"^(#) (.+)", self.heading1_format, 1)
+        ]
+        
+        for pattern_str, heading_format, level in heading_patterns:
+            pattern = QRegularExpression(pattern_str)
+            match = pattern.match(text)
+            if match.hasMatch():
+                # Get the hash characters and content
+                hash_chars = match.captured(1)  # The # characters
+                content = match.captured(2)     # The text after space
+                hash_length = len(hash_chars)
+                content_start = hash_length + 1  # +1 for the space
+                
+                # Apply formatting to the content (after the # and space)
+                self.setFormat(content_start, len(content), heading_format)
+                
+                # Handle # character visibility based on cursor position
+                cursor_on_this_line = (current_block_number == self.cursor_block_number)
+                
+                if not cursor_on_this_line:
+                    # Hide the # characters and the space
+                    self.setFormat(0, content_start, self.hidden_format)
+                
+                break  # Only one heading pattern can match per line
         
         # Handle bold formatting (**text**)
         bold_pattern = QRegularExpression(r"\*\*([^*]+)\*\*")
