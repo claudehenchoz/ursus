@@ -9,12 +9,20 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 
         self.bold_format = self.create_text_format(parent.text_size, QFont.Bold)
         self.italic_format = self.create_text_format(parent.text_size, QFont.StyleItalic)
-        self.heading_format = self.create_text_format(parent.text_size + 4, QFont.Bold)
+        self.heading1_format = self.create_text_format(parent.text_size + 8, QFont.Bold)
+        self.heading2_format = self.create_text_format(parent.text_size + 6, QFont.Bold)
+        self.heading3_format = self.create_text_format(parent.text_size + 4, QFont.Bold)
+        self.heading4_format = self.create_text_format(parent.text_size + 2, QFont.Bold)
+        self.heading5_format = self.create_text_format(parent.text_size + 1, QFont.Bold)
 
         self.rules.append((QRegularExpression(r"\*\*([^*]+)\*\*"), self.bold_format))
         self.rules.append((QRegularExpression(r"(?<!\*)\*([^*]+)\*(?!\*)"), self.italic_format))
         self.rules.append((QRegularExpression(r"(?<!\_)\_([^_]+)\_(?!\_)"), self.italic_format))
-        self.rules.append((QRegularExpression(r"^# .+"), self.heading_format))
+        self.rules.append((QRegularExpression(r"^##### .+"), self.heading5_format))
+        self.rules.append((QRegularExpression(r"^#### .+"), self.heading4_format))
+        self.rules.append((QRegularExpression(r"^### .+"), self.heading3_format))
+        self.rules.append((QRegularExpression(r"^## .+"), self.heading2_format))
+        self.rules.append((QRegularExpression(r"^# .+"), self.heading1_format))
 
     def create_text_format(self, size, style):
         font = QFont("Montserrat", size)
