@@ -3,6 +3,7 @@ from PySide6.QtGui import QIcon, QKeySequence, QShortcut, QColor
 from PySide6.QtCore import Qt, QSettings
 import sys
 import ctypes
+import platform
 
 from .config import Config
 from .main_widget import MainWidget
@@ -23,8 +24,9 @@ class MainWindow(QMainWindow):
         my_icon.addFile('resources/marky.png')
         self.setWindowIcon(my_icon)
 
-        myappid = u'henchoz.marky.0-1'  # arbitrary string
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        if platform.system() == 'Windows':
+            myappid = u'henchoz.marky.0-1'  # arbitrary string
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         desktop = QApplication.primaryScreen()
         screen_rect = desktop.availableGeometry()
