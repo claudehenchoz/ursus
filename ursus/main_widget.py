@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QTextEdit
 from PySide6.QtGui import QFontDatabase, QFont
+from PySide6.QtCore import QTimer
 from .highlighter import MarkdownHighlighter
 
 class MainWidget(QTextEdit):
@@ -10,6 +11,7 @@ class MainWidget(QTextEdit):
         self.set_default_style()
         self.highlighter = MarkdownHighlighter(self)
         self.setup_cursor()
+        self.setup_cursor_tracking()
 
     def load_fonts(self):
         QFontDatabase.addApplicationFont("resources/Montserrat-Regular.ttf")
@@ -30,3 +32,21 @@ class MainWidget(QTextEdit):
 
     def setup_cursor(self):
         self.setCursorWidth(3)
+        
+    def setup_cursor_tracking(self):
+        # Connect cursor position changes to highlighter
+        self.cursorPositionChanged.connect(self.on_cursor_position_changed)
+        
+        # Use a timer for debouncing to avoid excessive rehighlighting
+        self.cursor_timer = QTimer()
+        self.cursor_timer.setSingleShot(True)
+        self.cursor_timer.timeout.connect(self.update_highlighting)
+        
+    def on_cursor_position_changed(self):
+        # Debounce cursor position changes to avoid excessive rehighlighting
+        self.cursor_timer.stop()
+        self.cursor_timer.start(50)  # 50ms delay
+        
+    def update_highlighting(self):
+        cursor_position = self.textCursor().position()
+        self.highlighter.set_cursor_position(cursor_position)
