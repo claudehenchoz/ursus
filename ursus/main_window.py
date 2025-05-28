@@ -49,6 +49,8 @@ class MainWindow(QMainWindow):
             'copy_html': (QKeySequence("Ctrl+Shift+C"), self.copy_as_html),
             'new': (QKeySequence("Ctrl+N"), self.new_file),
             'change_color': (QKeySequence("Ctrl+K"), self.select_colors),
+            'toggle_bold': (QKeySequence("Ctrl+B"), self.main_widget.toggle_bold),
+            'toggle_italic': (QKeySequence("Ctrl+I"), self.main_widget.toggle_italic),
             'exit': (QKeySequence(Qt.Key_Escape), sys.exit)
         }
         for key, (seq, func) in self.shortcuts.items():
