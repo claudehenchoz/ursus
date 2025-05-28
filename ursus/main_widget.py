@@ -5,19 +5,29 @@ import re
 from .highlighter import MarkdownHighlighter
 
 class MainWidget(QTextEdit):
+    _fonts_loaded = False  # Class variable to avoid loading fonts multiple times
+    
     def __init__(self, text_size=12):
         super().__init__()
         self.text_size = text_size
-        self.load_fonts()
+        self.lazy_load_fonts()
         self.set_default_style()
-        self.highlighter = MarkdownHighlighter(self)
         self.setup_cursor()
         self.setup_cursor_tracking()
+        # Initialize highlighter after main setup for faster startup
+        self.highlighter = MarkdownHighlighter(self)
 
+    def lazy_load_fonts(self):
+        """Load fonts only once per application session."""
+        if not MainWidget._fonts_loaded:
+            QFontDatabase.addApplicationFont("resources/Montserrat-Regular.ttf")
+            QFontDatabase.addApplicationFont("resources/Montserrat-Italic.ttf")
+            QFontDatabase.addApplicationFont("resources/Montserrat-Bold.ttf")
+            MainWidget._fonts_loaded = True
+    
     def load_fonts(self):
-        QFontDatabase.addApplicationFont("resources/Montserrat-Regular.ttf")
-        QFontDatabase.addApplicationFont("resources/Montserrat-Italic.ttf")
-        QFontDatabase.addApplicationFont("resources/Montserrat-Bold.ttf")
+        """Deprecated - use lazy_load_fonts instead."""
+        self.lazy_load_fonts()
 
     def set_default_style(self):
         self.change_colors("white", "black")
@@ -46,7 +56,7 @@ class MainWidget(QTextEdit):
     def on_cursor_position_changed(self):
         # Debounce cursor position changes to avoid excessive rehighlighting
         self.cursor_timer.stop()
-        self.cursor_timer.start(50)  # 50ms delay
+        self.cursor_timer.start(100)  # 100ms delay for better performance
         
     def update_highlighting(self):
         cursor_position = self.textCursor().position()

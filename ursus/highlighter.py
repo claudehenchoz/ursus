@@ -1,8 +1,22 @@
 from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QFont, QColor
 from PySide6.QtCore import QRegularExpression
+import re
 
 class MarkdownHighlighter(QSyntaxHighlighter):
     """Syntax highlighter for markdown."""
+    
+    # Pre-compiled regex patterns for better performance
+    _compiled_patterns = {
+        'bold': re.compile(r'\*\*([^*]+)\*\*'),
+        'italic_star': re.compile(r'(?<!\*)\*([^*]+)\*(?!\*)'),
+        'italic_underscore': re.compile(r'(?<!\_)\_([^_]+)\_(?!\_)'),
+        'heading5': re.compile(r'^(#####) (.+)'),
+        'heading4': re.compile(r'^(####) (.+)'),
+        'heading3': re.compile(r'^(###) (.+)'),
+        'heading2': re.compile(r'^(##) (.+)'),
+        'heading1': re.compile(r'^(#) (.+)')
+    }
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent_widget = parent
@@ -56,22 +70,21 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         # Clear previous formatting ranges for this block
         self.formatting_ranges = [r for r in self.formatting_ranges if r['block_start'] != block_start]
         
-        # Handle headings with cursor-based visibility
+        # Handle headings with cursor-based visibility using pre-compiled patterns
         heading_patterns = [
-            (r"^(#####) (.+)", self.heading5_format, 5),
-            (r"^(####) (.+)", self.heading4_format, 4),
-            (r"^(###) (.+)", self.heading3_format, 3),
-            (r"^(##) (.+)", self.heading2_format, 2),
-            (r"^(#) (.+)", self.heading1_format, 1)
+            ('heading5', self.heading5_format),
+            ('heading4', self.heading4_format),
+            ('heading3', self.heading3_format),
+            ('heading2', self.heading2_format),
+            ('heading1', self.heading1_format)
         ]
         
-        for pattern_str, heading_format, level in heading_patterns:
-            pattern = QRegularExpression(pattern_str)
-            match = pattern.match(text)
-            if match.hasMatch():
+        for pattern_name, heading_format in heading_patterns:
+            match = self._compiled_patterns[pattern_name].match(text)
+            if match:
                 # Get the hash characters and content
-                hash_chars = match.captured(1)  # The # characters
-                content = match.captured(2)     # The text after space
+                hash_chars = match.group(1)  # The # characters
+                content = match.group(2)     # The text after space
                 hash_length = len(hash_chars)
                 content_start = hash_length + 1  # +1 for the space
                 
@@ -87,13 +100,10 @@ class MarkdownHighlighter(QSyntaxHighlighter):
                 
                 break  # Only one heading pattern can match per line
         
-        # Handle bold formatting (**text**)
-        bold_pattern = QRegularExpression(r"\*\*([^*]+)\*\*")
-        match_iterator = bold_pattern.globalMatch(text)
-        while match_iterator.hasNext():
-            match = match_iterator.next()
-            start = match.capturedStart()
-            length = match.capturedLength()
+        # Handle bold formatting (**text**) using pre-compiled pattern
+        for match in self._compiled_patterns['bold'].finditer(text):
+            start = match.start()
+            length = match.end() - match.start()
             content_start = start + 2
             content_length = length - 4
             absolute_start = block_start + start
@@ -123,18 +133,11 @@ class MarkdownHighlighter(QSyntaxHighlighter):
                 self.setFormat(start, 2, self.hidden_format)  # Hide opening **
                 self.setFormat(start + length - 2, 2, self.hidden_format)  # Hide closing **
         
-        # Handle italic formatting (*text* and _text_)
-        italic_patterns = [
-            QRegularExpression(r"(?<!\*)\*([^*]+)\*(?!\*)"),
-            QRegularExpression(r"(?<!\_)\_([^_]+)\_(?!\_)")
-        ]
-        
-        for pattern in italic_patterns:
-            match_iterator = pattern.globalMatch(text)
-            while match_iterator.hasNext():
-                match = match_iterator.next()
-                start = match.capturedStart()
-                length = match.capturedLength()
+        # Handle italic formatting (*text* and _text_) using pre-compiled patterns
+        for pattern_name in ['italic_star', 'italic_underscore']:
+            for match in self._compiled_patterns[pattern_name].finditer(text):
+                start = match.start()
+                length = match.end() - match.start()
                 content_start = start + 1
                 content_length = length - 2
                 absolute_start = block_start + start
