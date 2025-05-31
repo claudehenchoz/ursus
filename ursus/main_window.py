@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         self.current_file_path = None
 
     def open_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Text Files (*.txt);;All Files (*.*)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Markdown Files (*.md *.txt);;Text Files (*.txt);;All Files (*.*)")
         if file_path:
             with open(file_path, "r", encoding="utf-8") as file:
                 self.main_widget.setPlainText(file.read())
